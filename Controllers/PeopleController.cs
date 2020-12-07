@@ -14,7 +14,7 @@ namespace Lab5Rest.Controllers
                     {
                         new Person(1,"Patryk","Panasiuk","Biała Podlaska",1997),
                         new Person(2,"Johnny","Mexico","Nowy Meksyk",1985),
-                        new Person(3,"Mario","Macaroni","Rzym",1990),
+                        new Person(3,"Mario","Bros","Rzym",1990),
                     };
 
 
@@ -24,6 +24,67 @@ namespace Lab5Rest.Controllers
             return people;
         }
 
+        [Route("api/people/find/{name?}/{surname?}/{city?}/{year?}/{lowercase?}/{contains?}")]
+        public IEnumerable<Person> Get(string name = null, string surname = null, string city = null, int? year = null, 
+                                       bool lowercase = false, bool contains = false)
+        {
+
+            var item = people.AsEnumerable();
+
+            if (year != null)
+            {
+                item = item.Where(x => x.Year == year);
+            }
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                if (contains)
+                {
+                    item = item.Where(x => (lowercase ? x.Name.ToLower().Contains(name.ToLower()) : x.Name.Contains(name)));
+                }
+                else
+                {
+                    item = item.Where(x => (lowercase ? x.Name.ToLower() : x.Name)
+                    == (lowercase ? name.ToLower() : name));
+                }
+                //if (lowercase)
+               // {
+                //    item = item.Where(x => x.Name.Contains());
+               // }
+                //else
+                //{
+                //    item = item.Where(x => x.Name == name);
+                //}
+            }
+
+            if (!string.IsNullOrEmpty(surname))
+            {
+                if (contains)
+                {
+                    item = item.Where(x => (lowercase ? x.Surname.ToLower().Contains(surname.ToLower()) : x.Surname.Contains(surname)));
+                }
+                else
+                {
+                    item = item.Where(x => (lowercase ? x.Surname.ToLower() : x.Surname)
+                    == (lowercase ? surname.ToLower() : surname));
+                }
+            }
+
+            if (!string.IsNullOrEmpty(city))
+            {
+                if (contains)
+                {
+                    item = item.Where(x => (lowercase ? x.City.ToLower().Contains(city.ToLower()) : x.City.Contains(city)));
+                }
+                else
+                {
+                    item = item.Where(x => (lowercase ? x.City.ToLower() : x.City)
+                    == (lowercase ? city.ToLower() : city));
+                }
+            }
+
+            return item;
+        }
         // GET api/<controller>/5
         public HttpResponseMessage Get(int id)
         {
@@ -36,10 +97,18 @@ namespace Lab5Rest.Controllers
         }
 
         // POST api/<controller>
-        public HttpResponseMessage Post([FromBody] Person person)
+        public HttpResponseMessage Post([FromBody] Person person, bool city = false)
         {
             if(person !=null)
             {
+                if(city)
+                {
+                    var item = people.FirstOrDefault(x => x.City == person.City);
+                    if(item == null)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.OK,"With city parameter, there must be a person from the same city in the base");
+                    }
+                }
                 var maxId = 0;
                 if (people.Count > 0)
                 {
