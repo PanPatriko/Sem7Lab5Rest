@@ -1,4 +1,5 @@
 ﻿using Lab5Rest.Models;
+using Lab5Rest.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,138 +20,190 @@ namespace Lab5Rest.Controllers
 
 
         // GET api/<controller>
-        public IEnumerable<Person> Get()
+        public HttpResponseMessage Get()
         {
-            return people;
+            if (Request.Headers.Contains("Authorization"))
+            {
+                var token = Request.Headers.GetValues("Authorization").FirstOrDefault()?.Split(' ').Last();
+                if (AuthJWT.ValidateJwtToken(token))
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, people);
+                }
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Invalid token");
+            }
+            return Request.CreateResponse(HttpStatusCode.Unauthorized, "No authorization header");
         }
 
         [Route("api/people/find/{name?}/{surname?}/{city?}/{year?}/{lowercase?}/{contains?}")]
-        public IEnumerable<Person> Get(string name = null, string surname = null, string city = null, int? year = null, 
+        public HttpResponseMessage Get(string name = null, string surname = null, string city = null, int? year = null, 
                                        bool lowercase = false, bool contains = false)
         {
-
-            var item = people.AsEnumerable();
-
-            if (year != null)
+            if (Request.Headers.Contains("Authorization"))
             {
-                item = item.Where(x => x.Year == year);
-            }
+                var token = Request.Headers.GetValues("Authorization").FirstOrDefault()?.Split(' ').Last();
+                if (AuthJWT.ValidateJwtToken(token))
+                {
+                    var item = people.AsEnumerable();
 
-            if (!string.IsNullOrEmpty(name))
-            {
-                if (contains)
-                {
-                    item = item.Where(x => (lowercase ? x.Name.ToLower().Contains(name.ToLower()) : x.Name.Contains(name)));
-                }
-                else
-                {
-                    item = item.Where(x => (lowercase ? x.Name.ToLower() : x.Name)
-                    == (lowercase ? name.ToLower() : name));
-                }
-                //if (lowercase)
-               // {
-                //    item = item.Where(x => x.Name.Contains());
-               // }
-                //else
-                //{
-                //    item = item.Where(x => x.Name == name);
-                //}
-            }
+                    if (year != null)
+                    {
+                        item = item.Where(x => x.Year == year);
+                    }
 
-            if (!string.IsNullOrEmpty(surname))
-            {
-                if (contains)
-                {
-                    item = item.Where(x => (lowercase ? x.Surname.ToLower().Contains(surname.ToLower()) : x.Surname.Contains(surname)));
-                }
-                else
-                {
-                    item = item.Where(x => (lowercase ? x.Surname.ToLower() : x.Surname)
-                    == (lowercase ? surname.ToLower() : surname));
-                }
-            }
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        if (contains)
+                        {
+                            item = item.Where(x => (lowercase ? x.Name.ToLower().Contains(name.ToLower()) : x.Name.Contains(name)));
+                        }
+                        else
+                        {
+                            item = item.Where(x => (lowercase ? x.Name.ToLower() : x.Name)
+                            == (lowercase ? name.ToLower() : name));
+                        }
+                        //if (lowercase)
+                        // {
+                        //    item = item.Where(x => x.Name.Contains());
+                        // }
+                        //else
+                        //{
+                        //    item = item.Where(x => x.Name == name);
+                        //}
+                    }
 
-            if (!string.IsNullOrEmpty(city))
-            {
-                if (contains)
-                {
-                    item = item.Where(x => (lowercase ? x.City.ToLower().Contains(city.ToLower()) : x.City.Contains(city)));
-                }
-                else
-                {
-                    item = item.Where(x => (lowercase ? x.City.ToLower() : x.City)
-                    == (lowercase ? city.ToLower() : city));
-                }
-            }
+                    if (!string.IsNullOrEmpty(surname))
+                    {
+                        if (contains)
+                        {
+                            item = item.Where(x => (lowercase ? x.Surname.ToLower().Contains(surname.ToLower()) : x.Surname.Contains(surname)));
+                        }
+                        else
+                        {
+                            item = item.Where(x => (lowercase ? x.Surname.ToLower() : x.Surname)
+                            == (lowercase ? surname.ToLower() : surname));
+                        }
+                    }
 
-            return item;
+                    if (!string.IsNullOrEmpty(city))
+                    {
+                        if (contains)
+                        {
+                            item = item.Where(x => (lowercase ? x.City.ToLower().Contains(city.ToLower()) : x.City.Contains(city)));
+                        }
+                        else
+                        {
+                            item = item.Where(x => (lowercase ? x.City.ToLower() : x.City)
+                            == (lowercase ? city.ToLower() : city));
+                        }
+                    }
+                    return Request.CreateResponse(HttpStatusCode.OK, item);
+                }
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Invalid token");
+            }
+            return Request.CreateResponse(HttpStatusCode.Unauthorized, "No authorization header");           
         }
         // GET api/<controller>/5
         public HttpResponseMessage Get(int id)
         {
-            var item = people.FirstOrDefault(x => x.Id == id);
-            if (item != null)
+            if (Request.Headers.Contains("Authorization"))
             {
-                return Request.CreateResponse(HttpStatusCode.OK, item);
+                var token = Request.Headers.GetValues("Authorization").FirstOrDefault()?.Split(' ').Last();
+                if (AuthJWT.ValidateJwtToken(token))
+                {
+                    var item = people.FirstOrDefault(x => x.Id == id);
+                    if (item != null)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.OK, item);
+                    }
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                }
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Invalid token");
             }
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            return Request.CreateResponse(HttpStatusCode.Unauthorized, "No authorization header");
         }
 
         // POST api/<controller>
         public HttpResponseMessage Post([FromBody] Person person, bool city = false)
         {
-            if(person !=null)
+            if (Request.Headers.Contains("Authorization"))
             {
-                if(city)
+                var token = Request.Headers.GetValues("Authorization").FirstOrDefault()?.Split(' ').Last();
+                if (AuthJWT.ValidateJwtToken(token))
                 {
-                    var item = people.FirstOrDefault(x => x.City == person.City);
-                    if(item == null)
+                    if (person != null)
                     {
-                        return Request.CreateResponse(HttpStatusCode.OK,"With city parameter, there must be a person from the same city in the base");
+                        if (city)
+                        {
+                            var item = people.FirstOrDefault(x => x.City == person.City);
+                            if (item == null)
+                            {
+                                return Request.CreateResponse(HttpStatusCode.NotFound, "City not found");
+                            }
+                        }
+                        var maxId = 0;
+                        if (people.Count > 0)
+                        {
+                            maxId = people.Max(x => x.Id);
+                        }
+                        person.Id = maxId + 1;
+                        people.Add(person);
+                        return Request.CreateResponse(HttpStatusCode.Created, person);
                     }
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
                 }
-                var maxId = 0;
-                if (people.Count > 0)
-                {
-                    maxId = people.Max(x => x.Id);
-                }
-                person.Id = maxId + 1;
-                people.Add(person);
-                return Request.CreateResponse(HttpStatusCode.Created, person);
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Invalid token");
             }
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return Request.CreateResponse(HttpStatusCode.Unauthorized, "No authorization header");           
         }
 
         // PUT api/<controller>/5
         public HttpResponseMessage Put(int id, [FromBody] Person person)
         {
-            if(person != null)
+            if (Request.Headers.Contains("Authorization"))
             {
-                var item = people.FirstOrDefault(x => x.Id == id);
-                if (item != null)
+                var token = Request.Headers.GetValues("Authorization").FirstOrDefault()?.Split(' ').Last();
+                if (AuthJWT.ValidateJwtToken(token))
                 {
-                    item.Name = person.Name;
-                    item.Surname = person.Surname;
-                    item.City = person.City;
-                    item.Year = person.Year;
+                    if (person != null)
+                    {
+                        var item = people.FirstOrDefault(x => x.Id == id);
+                        if (item != null)
+                        {
+                            item.Name = person.Name;
+                            item.Surname = person.Surname;
+                            item.City = person.City;
+                            item.Year = person.Year;
 
-                    return Request.CreateResponse(HttpStatusCode.OK, item);
+                            return Request.CreateResponse(HttpStatusCode.OK, item);
+                        }
+                        return Request.CreateResponse(HttpStatusCode.NotFound);
+                    }
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
                 }
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Invalid token");
             }
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return Request.CreateResponse(HttpStatusCode.Unauthorized, "No authorization header");
         }
 
         // DELETE api/<controller>/5
         public HttpResponseMessage Delete(int id)
         {
-            var item = people.FirstOrDefault(x => x.Id == id);
-            if (item != null)
+            if (Request.Headers.Contains("Authorization"))
             {
-                people.Remove(item);
-                return Request.CreateResponse(HttpStatusCode.OK, item);
+                var token = Request.Headers.GetValues("Authorization").FirstOrDefault()?.Split(' ').Last();
+                if (AuthJWT.ValidateJwtToken(token))
+                {
+                    var item = people.FirstOrDefault(x => x.Id == id);
+                    if (item != null)
+                    {
+                        people.Remove(item);
+                        return Request.CreateResponse(HttpStatusCode.OK, item);
+                    }
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                }
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Invalid token");
             }
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            return Request.CreateResponse(HttpStatusCode.Unauthorized, "No authorization header");
         }
     }
 }
